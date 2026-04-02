@@ -1,5 +1,7 @@
-name: Azure Template Validation
+name: AZD Template Validation
 on:
+  schedule:
+    - cron: '30 1 * * 4' # Every Thursday at 7:00 AM IST (1:30 AM UTC)
   workflow_dispatch:
 
 permissions:
@@ -11,33 +13,28 @@ permissions:
 jobs:
   template_validation_job:
     runs-on: ubuntu-latest
+    name: azd template validation
     environment: production
-    name: Template validation
-
     steps:
-      # Step 1: Checkout the code from your repository
-      - name: Checkout code
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v6
 
-      # Step 2: Validate the Azure template using microsoft/template-validation-action
-      - name: Validate Azure Template
-        uses: microsoft/template-validation-action@v0.4.4
+      - uses: microsoft/template-validation-action@v0.4.3
         with:
-          validateAzd: true
-          useDevContainer: false
-          validateTests: false
+          validateAzd: ${{ vars.TEMPLATE_VALIDATE_AZD }}
+          validateTests: ${{ vars.TEMPLATE_VALIDATE_TESTS }}
+          useDevContainer: ${{ vars.TEMPLATE_USE_DEV_CONTAINER }}
         id: validation
         env:
           AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          AZURE_ENV_NAME: ${{ secrets.AZURE_ENV_NAME }}
-          AZURE_LOCATION: ${{ secrets.AZURE_LOCATION }}
-          AZURE_ENV_OPENAI_LOCATION: ${{ vars.AZURE_ENV_OPENAI_LOCATION || 'eastus2' }}
+          AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }}
+          AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
+          AZURE_ENV_OPENAI_LOCATION: ${{ vars.AZURE_LOCATION }}
           AZURE_ENV_USE_CASE: ${{ vars.AZURE_ENV_USE_CASE || 'telecom' }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           AZURE_DEV_COLLECT_TELEMETRY: ${{ vars.AZURE_DEV_COLLECT_TELEMETRY }}
 
-      # Step 3: Print the result of the validation
-      - name: Print result
+
+      - name: print result
         run: cat ${{ steps.validation.outputs.resultFile }}
